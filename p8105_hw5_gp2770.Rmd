@@ -18,25 +18,39 @@ library(ggplot2)
 
 set.seed(123)
 
-# Function for Shared Birthday
+```
+
+## Function for Shared Birthday
+
+```{r}
+
 shared_birthday <- function(n) {
   birthdays <- sample(1:365, n, replace = TRUE)
   return(any(duplicated(birthdays)))
 }
 
-# Parameters
+```
+
+## Parameters and Simulations for each Group Size
+
+```{r}
+
 num_simulations <- 10000
 group_sizes <- 2:50
 probabilities <- numeric(length(group_sizes))
 
-# Simulations for each group size
 for (i in seq_along(group_sizes)) {
   n <- group_sizes[i]
   results <- replicate(num_simulations, shared_birthday(n))
   probabilities[i] <- mean(results)
 }
 
-# Create a data frame for plotting
+```
+
+## Creating a Data Frame and Plotting
+
+```{r}
+
 birthday_df <- data.frame(GroupSize = group_sizes, Probability = probabilities)
 
 # Plot
@@ -113,7 +127,7 @@ simulation_results %>%
   group_by(true_mean) %>% 
   summarize(
     rejection_rate = mean(p_values < significance_level)
-  ) |>
+  ) %>% 
   ggplot(aes(x = true_mean, y = rejection_rate)) +
   geom_point() +
   geom_line() +
@@ -136,7 +150,7 @@ simulation_results %>%
   summarize(
     avg_all_samples = mean(mean_estimates),
     avg_rejected_samples = mean(mean_estimates[p_values < significance_level])
-  ) |>
+  ) %>% 
   ggplot(aes(x = true_mean)) +
   geom_line(aes(y = avg_all_samples, color = "All Samples")) +
   geom_point(aes(y = avg_all_samples, color = "All Samples")) +
@@ -154,8 +168,7 @@ simulation_results %>%
 
 ```
 
-The sample average of \(\hat{\mu}\) across tests where the null is rejected is approximately close to the true mean \(\mu\), but it tends to be slightly biased upward. This is due to the selection effect, where only estimates significantly different from zero are included, causing an overestimation, especially at higher values of \(\mu\).
-
+The sample average of \(\hat{\mu}\) across tests where the null is rejected is approximately close to the true mean \(\mu\), but it tends to be slightly biased upward. This is potentially due to the selection effect, where only estimates significantly different from zero are included, causing an overestimation, especially at higher values of \(\mu\).
 
 # Problem 3
 
@@ -167,9 +180,10 @@ homicide_data <- read.csv("data/homicide-data.csv")
 
 This dataset includes 52,179 records of homicide cases, each providing information on the victim’s demographics (name, race, age, and sex) and the incident’s details, including the date, location (city, state, latitude, and longitude), and case status (disposition). The disposition column indicates whether the case was resolved, often specifying if it was closed by arrest. Latitude and longitude values are missing for some entries.
 
+## Creating a city_state Variable and Summarizing Within Cities
+
 ```{r}
 
-# Create city_state variable and summarize data
 homicide_summary <- homicide_data %>%
   mutate(city_state = paste(city, state, sep = ", ")) %>%
   group_by(city_state) %>%
@@ -178,6 +192,16 @@ homicide_summary <- homicide_data %>%
     unsolved_homicides = sum(disposition %in% c("Closed without arrest", "Open/No arrest"))
   ) %>%
   ungroup()
+
+homicide_summary %>% 
+  head(15) %>% 
+  knitr::kable()
+
+```
+
+## Filtering for Baltimore, MD
+
+```{r}
 
 # Filter data for Baltimore, MD
 baltimore_data <- filter(homicide_summary, city_state == "Baltimore, MD")
@@ -191,6 +215,12 @@ baltimore_proportion <- baltimore_tidy$estimate
 baltimore_conf_int <- c(baltimore_tidy$conf.low, baltimore_tidy$conf.high)
 baltimore_proportion
 baltimore_conf_int
+
+```
+
+## Filtering for all the Cities
+
+```{r}
 
 # Apply prop.test for each city and extract proportions and CIs
 homicide_proportions <- homicide_summary %>%
@@ -206,6 +236,12 @@ homicide_proportions <- homicide_summary %>%
 homicide_proportions <- homicide_proportions %>%
   arrange(desc(proportion)) %>%
   mutate(city_state = factor(city_state, levels = city_state))
+
+```
+
+## Plotting
+
+```{r}
 
 # Plot the proportions with confidence intervals
 ggplot(homicide_proportions, aes(x = city_state, y = proportion)) +
